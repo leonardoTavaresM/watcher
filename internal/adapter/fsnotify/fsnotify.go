@@ -50,6 +50,10 @@ func (a *FsnotifyAdapter) Start(path string) error {
 				evType = "MODIFY"
 			} else if event.Op&fsnotify.Remove == fsnotify.Remove {
 				evType = "Remove"
+			} else if event.Op&fsnotify.Rename == fsnotify.Rename {
+				evType = "RENAME"
+			} else if event.Op&fsnotify.Chmod == fsnotify.Chmod {
+				evType = "CHMOD"
 			}
 
 			if evType != "" {
