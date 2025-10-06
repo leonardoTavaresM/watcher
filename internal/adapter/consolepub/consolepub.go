@@ -4,17 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/leonardoTavaresM/watcher/internal/domain"
+	"github.com/leonardoTavaresM/watcher/internal/domain/repository/memory"
 )
 
-type ConsolePublisher struct{}
-
-func NewConsolePublisher() *ConsolePublisher {
-	return &ConsolePublisher{}
+type ConsolePublisher struct {
+	repository *memory.InMemoryEvent
 }
 
-func (c *ConsolePublisher) Publish(event domain.FileEvent) error {
-	data, err := json.Marshal(event)
+func NewConsolePublisher(repository *memory.InMemoryEvent) *ConsolePublisher {
+	return &ConsolePublisher{
+		repository: repository,
+	}
+}
+
+func (c *ConsolePublisher) Publish() error {
+	data, err := json.Marshal(c.repository.GetEvents())
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/leonardoTavaresM/watcher/internal/service/watcher"
+	"github.com/leonardoTavaresM/watcher/internal/domain/service/watcher"
 )
 
 type FsnotifyAdapter struct {

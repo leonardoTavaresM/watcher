@@ -8,8 +8,3 @@ type FileEvent struct {
 	Ext       string
 	Event     string
 }
-
-// port
-type EventPublisher interface {
-	Publish(event FileEvent) error
-}
