@@ -31,8 +31,8 @@ func main() {
 
 	path := os.Getenv("WATCH_PATH")
 	if path == "" {
-		fmt.Println("fallback")
-		path = "/app/dev"
+		fmt.Println("fallback to current directory")
+		path = "."
 	}
 
 	httpAdapter := httppub.NewHTTPAdapter(repository)
