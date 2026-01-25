@@ -8,3 +8,8 @@ type FileEvent struct {
 	Ext       string
 	Event     string
 }
+
+type Publisher interface {
+	Publish(event FileEvent) error
+	Close() error
+}

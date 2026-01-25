@@ -2,26 +2,28 @@ package watcher
 
 import (
 	"errors"
+	"log"
 	"sync"
 	"time"
 
-	"github.com/leonardoTavaresM/watcher/internal/adapter/consolepub"
 	"github.com/leonardoTavaresM/watcher/internal/domain"
 	"github.com/leonardoTavaresM/watcher/internal/domain/repository/memory"
 )
 
 type WatcherService struct {
 	repository *memory.InMemoryEvent
-	publisher  *consolepub.ConsolePublisher
+	// publisher  *consolepub.ConsolePublisher
+	publishers []domain.Publisher
 	lastEvent  map[string]time.Time
 	mu         sync.Mutex
 	debounce   time.Duration
 }
 
-func NewWatcherService(memory *memory.InMemoryEvent, publisher *consolepub.ConsolePublisher) *WatcherService {
+func NewWatcherService(memory *memory.InMemoryEvent, publishers ...domain.Publisher) *WatcherService {
 	return &WatcherService{
 		repository: memory,
-		publisher:  publisher,
+		// publisher:  publisher,
+		publishers: publishers,
 		lastEvent:  make(map[string]time.Time),
 		debounce:   750 * time.Millisecond,
 	}
@@ -44,7 +46,12 @@ func (s *WatcherService) HandleFileEvent(path, ext, evType string) error {
 		return errors.New(err.Error())
 	}
 
-	s.publisher.Publish()
+	// s.publisher.Publish(event)
+	for _, publisher := range s.publishers {
+		if err := publisher.Publish(event); err != nil {
+			log.Printf("Failed to publish to %T: %v", publisher, err)
+		}
+	}
 
 	return nil
 }

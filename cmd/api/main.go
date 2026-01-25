@@ -11,17 +11,31 @@ import (
 	"github.com/leonardoTavaresM/watcher/internal/adapter/consolepub"
 	"github.com/leonardoTavaresM/watcher/internal/adapter/fsnotify"
 	"github.com/leonardoTavaresM/watcher/internal/adapter/httppub"
+	"github.com/leonardoTavaresM/watcher/internal/adapter/rabbitmq"
 	"github.com/leonardoTavaresM/watcher/internal/domain/repository/memory"
 	"github.com/leonardoTavaresM/watcher/internal/domain/service/watcher"
 )
 
 func main() {
-
 	app := fiber.New()
 
 	repository := memory.NewInMemoryEvent()
-	publisher := consolepub.NewConsolePublisher(repository)
-	service := watcher.NewWatcherService(repository, publisher)
+
+	consolePublisher := consolepub.NewConsolePublisher(repository)
+	rabbitConfig := rabbitmq.GetConfig()
+
+	rabbitPublisher, err := rabbitmq.NewRabbitMQPublisher(
+		rabbitConfig.URI,
+		rabbitConfig.Exchange,
+		rabbitConfig.Queue,
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to create RabbitMQ publisher: %v", err)
+	}
+	defer rabbitPublisher.Close()
+
+	service := watcher.NewWatcherService(repository, consolePublisher, rabbitPublisher)
 
 	adapter := fsnotify.NewFsnotifyAdapter(service)
 

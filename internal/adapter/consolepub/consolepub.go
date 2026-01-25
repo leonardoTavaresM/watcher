@@ -4,11 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/leonardoTavaresM/watcher/internal/domain"
 	"github.com/leonardoTavaresM/watcher/internal/domain/repository/memory"
 )
 
 type ConsolePublisher struct {
 	repository *memory.InMemoryEvent
+}
+
+// Close implements domain.Publisher.
+func (c *ConsolePublisher) Close() error {
+	panic("unimplemented")
 }
 
 func NewConsolePublisher(repository *memory.InMemoryEvent) *ConsolePublisher {
@@ -17,7 +23,7 @@ func NewConsolePublisher(repository *memory.InMemoryEvent) *ConsolePublisher {
 	}
 }
 
-func (c *ConsolePublisher) Publish() error {
+func (c *ConsolePublisher) Publish(event domain.FileEvent) error {
 	data, err := json.Marshal(c.repository.GetEvents())
 	if err != nil {
 		return err
