@@ -11,6 +11,24 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  watcher:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      WATCH_PATH: /app/dev
+      RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/
+    volumes:
+      - /home/leonardomalt/Documents/dev:/app/dev
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   rabbitmq_data:

@@ -1,4 +1,4 @@
-package rabbitmq
+package publisher
 
 import (
 	"fmt"
@@ -6,13 +6,12 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-type Connection struct {
+type RabbitMQConnection struct {
 	conn    *amqp091.Connection
 	channel *amqp091.Channel
 }
 
-// Connect to RabbitMQ
-func NewConnection(uri string) (*Connection, error) {
+func NewRabbitMQConnection(uri string) (*RabbitMQConnection, error) {
 	conn, err := amqp091.Dial(uri)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
@@ -23,25 +22,23 @@ func NewConnection(uri string) (*Connection, error) {
 		return nil, fmt.Errorf("failed to create channel: %w", err)
 	}
 
-	return &Connection{
+	return &RabbitMQConnection{
 		conn:    conn,
 		channel: ch,
 	}, nil
 }
 
-// Close connection
-
-func (c *Connection) Close() error {
+func (c *RabbitMQConnection) Close() error {
 	if c.channel != nil {
 		c.channel.Close()
 	}
 
 	if c.conn != nil {
-		c.channel.Close()
+		c.conn.Close()
 	}
 	return nil
 }
 
-func (c *Connection) GetChannel() *amqp091.Channel {
+func (c *RabbitMQConnection) GetChannel() *amqp091.Channel {
 	return c.channel
 }

@@ -8,57 +8,62 @@ import (
 	"syscall"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/leonardoTavaresM/watcher/internal/adapter/consolepub"
-	"github.com/leonardoTavaresM/watcher/internal/adapter/fsnotify"
-	"github.com/leonardoTavaresM/watcher/internal/adapter/httppub"
-	"github.com/leonardoTavaresM/watcher/internal/adapter/rabbitmq"
-	"github.com/leonardoTavaresM/watcher/internal/domain/repository/memory"
-	"github.com/leonardoTavaresM/watcher/internal/domain/service/watcher"
+	"github.com/leonardoTavaresM/watcher/internal/application/service"
+	"github.com/leonardoTavaresM/watcher/internal/infrastructure/adapter/fsnotify"
+	"github.com/leonardoTavaresM/watcher/internal/infrastructure/adapter/publisher"
+	"github.com/leonardoTavaresM/watcher/internal/infrastructure/adapter/repository"
+	"github.com/leonardoTavaresM/watcher/internal/infrastructure/config"
+	"github.com/leonardoTavaresM/watcher/internal/infrastructure/handler"
 )
 
 func main() {
 	app := fiber.New()
 
-	repository := memory.NewInMemoryEvent()
+	// Infrastructure - Repository
+	repo := repository.NewInMemoryRepository()
 
-	consolePublisher := consolepub.NewConsolePublisher(repository)
-	rabbitConfig := rabbitmq.GetConfig()
+	// Infrastructure - Publishers
+	consolePublisher := publisher.NewConsolePublisher(repo)
 
-	rabbitPublisher, err := rabbitmq.NewRabbitMQPublisher(
+	rabbitConfig := config.GetRabbitMQConfig()
+	rabbitPublisher, err := publisher.NewRabbitMQPublisher(
 		rabbitConfig.URI,
 		rabbitConfig.Exchange,
 		rabbitConfig.Queue,
 	)
-
 	if err != nil {
 		log.Fatalf("Failed to create RabbitMQ publisher: %v", err)
 	}
 	defer rabbitPublisher.Close()
 
-	service := watcher.NewWatcherService(repository, consolePublisher, rabbitPublisher)
+	// Application - Service
+	watcherService := service.NewWatcherService(repo, consolePublisher, rabbitPublisher)
 
-	adapter := fsnotify.NewFsnotifyAdapter(service)
+	// Infrastructure - Adapters
+	fsnotifyAdapter := fsnotify.NewFsnotifyAdapter(watcherService)
 
+	// Infrastructure - HTTP Handlers
+	httpHandler := handler.NewHTTPHandler(repo)
+
+	// Routes
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		return c.JSON(`{pong}`)
 	})
+	app.Get("/events", httpHandler.GetAllEvents)
+	app.Get("/events/:id", httpHandler.GetEvent)
 
+	// Watch path
 	path := os.Getenv("WATCH_PATH")
 	if path == "" {
 		fmt.Println("fallback to current directory")
 		path = "."
 	}
 
-	httpAdapter := httppub.NewHTTPAdapter(repository)
-
-	app.Get("/events", httpAdapter.GetAllEvents)
-	app.Get("/events/:id", httpAdapter.GetEvent)
-
-	// Canal para sinais do sistema
+	// Signal handling
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	// Iniciar HTTP server em goroutine
+	// Start HTTP server
 	go func() {
 		err := app.Listen(":3000")
 		if err != nil {
@@ -66,19 +71,18 @@ func main() {
 		}
 	}()
 
-	// Iniciar fsnotify em goroutine
+	// Start fsnotify watcher
 	go func() {
-		err := adapter.Start(path)
+		err := fsnotifyAdapter.Start(path)
 		if err != nil {
 			log.Fatal("fsnotify error:", err)
 		}
 	}()
 
-	// Aguardar sinal de shutdown
+	// Wait for shutdown signal
 	<-c
 	log.Println("Shutting down...")
 
-	// Shutdown graceful do HTTP server
 	app.Shutdown()
 
 	log.Println("Server stopped")

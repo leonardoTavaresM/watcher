@@ -1,25 +1,25 @@
-package httppub
+package handler
 
 import (
 	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/leonardoTavaresM/watcher/internal/domain/repository/memory"
+	"github.com/leonardoTavaresM/watcher/internal/application/port"
 )
 
-type HttpAdapter struct {
-	repository memory.InMemoryEvent
+type HTTPHandler struct {
+	repository port.EventRepository
 }
 
-func NewHTTPAdapter(repository *memory.InMemoryEvent) *HttpAdapter {
-	return &HttpAdapter{
-		repository: *repository,
+func NewHTTPHandler(repository port.EventRepository) *HTTPHandler {
+	return &HTTPHandler{
+		repository: repository,
 	}
 }
 
-func (h *HttpAdapter) GetAllEvents(c *fiber.Ctx) error {
-	events := h.repository.GetEvents()
+func (h *HTTPHandler) GetAllEvents(c *fiber.Ctx) error {
+	events := h.repository.GetAll()
 
 	response, err := ToEventsResponse(events)
 	if err != nil {
@@ -31,7 +31,7 @@ func (h *HttpAdapter) GetAllEvents(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(response)
 }
 
-func (h *HttpAdapter) GetEvent(c *fiber.Ctx) error {
+func (h *HTTPHandler) GetEvent(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -39,7 +39,7 @@ func (h *HttpAdapter) GetEvent(c *fiber.Ctx) error {
 		})
 	}
 
-	event := h.repository.GetEvent(id)
+	event := h.repository.GetByID(id)
 
 	response, err := ToEventResponse(id, event)
 	if err != nil {

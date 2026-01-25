@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/leonardoTavaresM/watcher/internal/domain/service/watcher"
+	"github.com/leonardoTavaresM/watcher/internal/application/service"
 )
 
 type FsnotifyAdapter struct {
-	service *watcher.WatcherService
+	service *service.WatcherService
 }
 
-func NewFsnotifyAdapter(s *watcher.WatcherService) *FsnotifyAdapter {
+func NewFsnotifyAdapter(s *service.WatcherService) *FsnotifyAdapter {
 	return &FsnotifyAdapter{service: s}
 }
 
@@ -49,7 +49,7 @@ func (a *FsnotifyAdapter) Start(path string) error {
 			} else if event.Op&fsnotify.Write == fsnotify.Write {
 				evType = "MODIFY"
 			} else if event.Op&fsnotify.Remove == fsnotify.Remove {
-				evType = "Remove"
+				evType = "REMOVE"
 			} else if event.Op&fsnotify.Rename == fsnotify.Rename {
 				evType = "RENAME"
 			} else if event.Op&fsnotify.Chmod == fsnotify.Chmod {

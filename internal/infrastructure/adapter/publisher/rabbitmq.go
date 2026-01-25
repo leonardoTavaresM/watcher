@@ -1,21 +1,21 @@
-package rabbitmq
+package publisher
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/leonardoTavaresM/watcher/internal/domain"
+	"github.com/leonardoTavaresM/watcher/internal/domain/entity"
 	"github.com/rabbitmq/amqp091-go"
 )
 
 type RabbitMQPublisher struct {
-	conn     *Connection
+	conn     *RabbitMQConnection
 	queue    string
 	exchange string
 }
 
 func NewRabbitMQPublisher(uri, exchange, queue string) (*RabbitMQPublisher, error) {
-	conn, err := NewConnection(uri)
+	conn, err := NewRabbitMQConnection(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func NewRabbitMQPublisher(uri, exchange, queue string) (*RabbitMQPublisher, erro
 	}, nil
 }
 
-func (p *RabbitMQPublisher) Publish(event domain.FileEvent) error {
+func (p *RabbitMQPublisher) Publish(event entity.FileEvent) error {
 	body, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
@@ -82,7 +82,7 @@ func (p *RabbitMQPublisher) Publish(event domain.FileEvent) error {
 		amqp091.Publishing{
 			ContentType:  "application/json",
 			Body:         body,
-			DeliveryMode: amqp091.Persistent, // Message persist
+			DeliveryMode: amqp091.Persistent,
 		},
 	)
 	if err != nil {

@@ -32,3 +32,26 @@ clean:
 
 # Ciclo completo: limpar, rebuildar e rodar
 rebuild: clean build run
+
+up:
+	docker compose up --build
+
+down:
+	docker compose down
+
+# Desenvolvimento local: sobe só RabbitMQ, app roda local
+dev:
+	docker compose up -d rabbitmq
+	@echo "RabbitMQ rodando em localhost:5672"
+	@echo "Management UI: http://localhost:15672 (guest/guest)"
+	@echo ""
+	@echo "Aguardando RabbitMQ ficar healthy..."
+	@until docker compose exec rabbitmq rabbitmq-diagnostics -q ping 2>/dev/null; do \
+		echo "Aguardando..."; \
+		sleep 2; \
+	done
+	@echo "RabbitMQ pronto!"
+	WATCH_PATH=. go run cmd/api/main.go
+
+dev-stop:
+	docker compose down rabbitmq

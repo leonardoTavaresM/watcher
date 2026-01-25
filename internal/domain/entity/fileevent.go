@@ -1,4 +1,4 @@
-package domain
+package entity
 
 import "time"
 
@@ -7,9 +7,4 @@ type FileEvent struct {
 	FilePath  string
 	Ext       string
 	Event     string
-}
-
-type Publisher interface {
-	Publish(event FileEvent) error
-	Close() error
 }

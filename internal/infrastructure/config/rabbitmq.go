@@ -1,15 +1,15 @@
-package rabbitmq
+package config
 
 import "os"
 
-type Config struct {
+type RabbitMQConfig struct {
 	URI      string
 	Exchange string
 	Queue    string
 }
 
-func GetConfig() Config {
-	return Config{
+func GetRabbitMQConfig() RabbitMQConfig {
+	return RabbitMQConfig{
 		URI:      getEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/"),
 		Exchange: getEnv("RABBITMQ_EXCHANGE", "file_events"),
 		Queue:    getEnv("RABBITMQ_QUEUE", "file_events_queue"),
