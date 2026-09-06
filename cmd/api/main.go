@@ -29,7 +29,7 @@ func main() {
 	rabbitPublisher, err := publisher.NewRabbitMQPublisher(
 		rabbitConfig.URI,
 		rabbitConfig.Exchange,
-		rabbitConfig.Queue,
+		rabbitConfig.RoutingKey,
 	)
 	if err != nil {
 		log.Fatalf("Failed to create RabbitMQ publisher: %v", err)

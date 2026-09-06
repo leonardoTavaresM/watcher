@@ -9,12 +9,17 @@ import (
 )
 
 type RabbitMQPublisher struct {
-	conn     *RabbitMQConnection
-	queue    string
-	exchange string
+	conn       *RabbitMQConnection
+	routingKey string
+	exchange   string
 }
 
-func NewRabbitMQPublisher(uri, exchange, queue string) (*RabbitMQPublisher, error) {
+// NewRabbitMQPublisher NÃO declara nem faz bind de fila nenhuma: um producer
+// puro só precisa que o exchange exista. Declarar/consumir filas é
+// responsabilidade de quem consome (ver serviço collector) — do contrário o
+// watcher fica "dono" de uma fila que ele mesmo nunca lê, e ela cresce sem
+// limite (foi exatamente esse bug que existia aqui antes desse ajuste).
+func NewRabbitMQPublisher(uri, exchange, routingKey string) (*RabbitMQPublisher, error) {
 	conn, err := NewRabbitMQConnection(uri)
 	if err != nil {
 		return nil, err
@@ -35,36 +40,10 @@ func NewRabbitMQPublisher(uri, exchange, queue string) (*RabbitMQPublisher, erro
 		return nil, fmt.Errorf("failed to declare exchange: %w", err)
 	}
 
-	// Declare queue
-	_, err = conn.GetChannel().QueueDeclare(
-		queue, // name
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to declare queue: %w", err)
-	}
-
-	// Bind queue to exchange
-	err = conn.GetChannel().QueueBind(
-		queue,    // queue name
-		queue,    // routing key
-		exchange, // exchange
-		false,
-		nil,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to bind queue: %w", err)
-	}
-
 	return &RabbitMQPublisher{
-		conn:     conn,
-		queue:    queue,
-		exchange: exchange,
+		conn:       conn,
+		routingKey: routingKey,
+		exchange:   exchange,
 	}, nil
 }
 
@@ -75,10 +54,10 @@ func (p *RabbitMQPublisher) Publish(event entity.FileEvent) error {
 	}
 
 	err = p.conn.GetChannel().Publish(
-		p.exchange, // exchange
-		p.queue,    // routing key
-		false,      // mandatory
-		false,      // immediate
+		p.exchange,   // exchange
+		p.routingKey, // routing key
+		false,        // mandatory
+		false,        // immediate
 		amqp091.Publishing{
 			ContentType:  "application/json",
 			Body:         body,

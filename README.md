@@ -104,12 +104,16 @@ internal/
 
 ### Variáveis de Ambiente
 
-| Variável            | Descrição                    | Default                              |
-|---------------------|------------------------------|--------------------------------------|
-| `WATCH_PATH`        | Diretório a monitorar        | `.` (diretório atual)                |
-| `RABBITMQ_URI`      | URI de conexão RabbitMQ      | `amqp://guest:guest@localhost:5672/` |
-| `RABBITMQ_EXCHANGE` | Nome do exchange             | `file_events`                        |
-| `RABBITMQ_QUEUE`    | Nome da fila                 | `file_events_queue`                  |
+| Variável               | Descrição                                  | Default                              |
+|------------------------|----------------------------------------------|--------------------------------------|
+| `WATCH_PATH`           | Diretório a monitorar                        | `.` (diretório atual)                |
+| `RABBITMQ_URI`         | URI de conexão RabbitMQ                      | `amqp://guest:guest@localhost:5672/` |
+| `RABBITMQ_EXCHANGE`    | Nome do exchange (tipo `topic`)              | `file_events`                        |
+| `RABBITMQ_ROUTING_KEY` | Routing key usada ao publicar cada evento    | `file_events_queue`                  |
+
+O watcher é um **producer puro**: ele só declara o exchange, nunca declara
+nem faz bind de fila nenhuma — isso é responsabilidade de quem consome (ver
+o serviço [`collector`](../collector)).
 
 ### Diretórios Ignorados
 

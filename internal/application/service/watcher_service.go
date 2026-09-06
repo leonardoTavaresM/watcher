@@ -54,6 +54,7 @@ func (s *WatcherService) HandleFileEvent(path, ext, evType string) error {
 }
 
 func (s *WatcherService) ShouldProcess(path string) bool {
+	// sync.Mutex(s.mu) This exists because it is accessed by multiple goroutines.
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
